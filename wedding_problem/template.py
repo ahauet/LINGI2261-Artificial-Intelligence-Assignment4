@@ -76,7 +76,7 @@ class State:
         self.m = m
         self.tables = tables
         self.val = val
-        #self.sort_tables()
+        self.sort_tables()
 
     def sort_tables(self):
         if len(self.tables) > 0 and len(self.tables[0]) and self.tables[0][0] is not None:
@@ -117,17 +117,19 @@ def maxvalue(problem, limit=100, callback=None):
             if node.value() > best.value():
                 best = node
             elif node.value() == best.value():
-                #need to compare them with the concatenation of the 2 states's tables
                 found = False
+                #need to compare them with the concatenation of the 2 states's tables
                 for i in range(len(node.state.tables)):
-                    if found: break
+                    #if found : break
                     for j in range(len(node.state.tables[0])):
-                        if found: break
-                        if node.state.tables[i][j] > best.state.tables[i][j]:
+                        if node.state.tables[i][j] < best.state.tables[i][j]:
+                            found = True
+                            break
+                        elif node.state.tables[i][j] > best.state.tables[i][j]:
                             best = node
                             found = True
-                        elif node.state.tables[i][j] < best.state.tables[i][j]:
-                            found = True #bu it is not a better node
+                            break
+
         current = best
         best = None
         current_value = problem.value(current.state)
@@ -188,4 +190,4 @@ if __name__ == '__main__':
     print(wedding.value(state))
     print(state)
     total_time = time.time() - start_time
-    print(total_time)
+    #print(total_time)
