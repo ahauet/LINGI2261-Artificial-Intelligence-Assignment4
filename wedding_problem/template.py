@@ -26,16 +26,15 @@ class Wedding(Problem):
     def successor(self, state):
         for i in range (0, len(state.tables)):
             for l in range(0, len(state.tables[0])):
-                for j in range(i , len(state.tables)):
+                for j in range(i+1 , len(state.tables)):
                     for k in range(0, len(state.tables[0])):
-                        if i != j:
-                            new_tables = deepcopy(state.tables)
-                            temp = new_tables[i][l]
-                            new_tables[i][l] = new_tables[j][k]
-                            new_tables[j][k] = temp
-                            new_state = State(self.n, self.t, self.a, new_tables, 0)
-                            #new_state.val = self.value(new_state)
-                            yield ((i,l,j,k), new_state)
+                        new_tables = deepcopy(state.tables)
+                        temp = new_tables[i][l]
+                        new_tables[i][l] = new_tables[j][k]
+                        new_tables[j][k] = temp
+                        new_state = State(self.n, self.t, self.a, new_tables, 0)
+                        #new_state.val = self.value(new_state)
+                        yield ((i,l,j,k), new_state)
 
     def value(self, state):
         val = 0
