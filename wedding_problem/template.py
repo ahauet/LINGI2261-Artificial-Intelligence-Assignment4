@@ -4,6 +4,7 @@
 #		Implementation of the wedding problem class
 #
 ################################################################################
+import time
 from search import *
 from copy import deepcopy
 
@@ -75,7 +76,7 @@ class State:
         self.m = m
         self.tables = tables
         self.val = val
-        self.sort_tables()
+        #self.sort_tables()
 
     def sort_tables(self):
         if len(self.tables) > 0 and len(self.tables[0]) and self.tables[0][0] is not None:
@@ -104,6 +105,9 @@ def randomized_maxvalue(problem, limit=100, callback=None):
 def maxvalue(problem, limit=100, callback=None):
     current = LSNode(problem, problem.initial, 0)
     best = None
+    previous = None
+    previous_previous = None
+    previous_previous_previous = None
     for step in range(limit):
         if callback is not None:
             callback(current)
@@ -122,9 +126,17 @@ def maxvalue(problem, limit=100, callback=None):
                         if node.state.tables[i][j] > best.state.tables[i][j]:
                             best = node
                             found = True
+                        elif node.state.tables[i][j] < best.state.tables[i][j]:
+                            found = True #bu it is not a better node
         current = best
         best = None
-        #print(problem.value(current.state))
+        current_value = problem.value(current.state)
+        #print("current = %s; p = %s; pp = %s; ppp = %s", problem.value(current.state), previous, previous_previous, previous_previous_previous)
+        if previous_previous_previous is not None and previous_previous_previous == previous and current_value == previous_previous:
+            break; #we iterate over the same values over and over so just break here
+        previous_previous_previous = previous_previous
+        previous_previous = previous
+        previous = current_value
     return current
 
 def greedy(problem):
@@ -163,6 +175,7 @@ def greedy_comp(tuple):
     return tuple[1]
 
 if __name__ == '__main__':
+    start_time = time.time()
     wedding = Wedding(sys.argv[1])
     greedy(wedding)
     print(wedding.value(wedding.initial))
@@ -174,3 +187,5 @@ if __name__ == '__main__':
     state = node.state
     print(wedding.value(state))
     print(state)
+    total_time = time.time() - start_time
+    print(total_time)
