@@ -26,9 +26,9 @@ class Wedding(Problem):
     def successor(self, state):
         for i in range (0, len(state.tables)):
             for l in range(0, len(state.tables[0])):
-                for j in range(i , len(state.tables)):
-                    for k in range(0, len(state.tables[0])):
-                        if i != j:
+                for j in range(i+1 , len(state.tables)):
+                    if i != j:
+                        for k in range(0, len(state.tables[0])):
                             new_tables = deepcopy(state.tables)
                             temp = new_tables[i][l]
                             new_tables[i][l] = new_tables[j][k]
@@ -75,6 +75,12 @@ class State:
         self.m = m
         self.tables = tables
         self.val = val
+        self.sort_tables()
+
+    def sort_tables(self):
+        if len(self.tables) > 0 and len(self.tables[0]) and self.tables[0][0] is not None:
+            for table in self.tables:
+                table.sort()
 
     def __str__(self):
         output = ""
@@ -101,13 +107,24 @@ def maxvalue(problem, limit=100, callback=None):
     for step in range(limit):
         if callback is not None:
             callback(current)
-        for state in list(current.expand()):
+        for node in list(current.expand()):
             if best is None:
-                best = state
-            if state.value() > best.value():
-                best = state
+                best = node
+            if node.value() > best.value():
+                best = node
+            elif node.value() == best.value():
+                #need to compare them with the concatenation of the 2 states's tables
+                found = False
+                for i in range(len(node.state.tables)):
+                    if found: break
+                    for j in range(len(node.state.tables[0])):
+                        if found: break
+                        if node.state.tables[i][j] > best.state.tables[i][j]:
+                            best = node
+                            found = True
         current = best
         best = None
+        #print(problem.value(current.state))
     return current
 
 def greedy(problem):
