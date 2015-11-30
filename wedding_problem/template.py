@@ -78,10 +78,11 @@ class State:
     def __str__(self):
         output = ""
         for i in range(0, len(self.tables)):
-            #self.tables[i].sort()
+            self.tables[i].sort()
             for j in range(0, len(self.tables[0])):
                 output += str(self.tables[i][j]) + ' '
-            output += '\n'
+            if i < len(self.tables)-1:
+                output += '\n'
         return output
 
 
@@ -99,7 +100,7 @@ def maxvalue(problem, limit=100, callback=None):
     for step in range(limit):
         if callback is not None:
             callback(current)
-        current = random.choice(list(current.expand()))
+        current = (list(current.expand()))[0]
         if best is None:
             best = current
         if current.value() > best.value():
@@ -144,10 +145,12 @@ def greedy_comp(tuple):
 if __name__ == '__main__':
     wedding = Wedding(sys.argv[1])
     greedy(wedding)
-    #print(wedding.tables)
+    print(wedding.value(wedding.initial))
+    print(wedding.initial)
 
     # node = randomized_maxvalue(wedding, 100)
     node = maxvalue(wedding, 100)
 
     state = node.state
+    print(wedding.value(state))
     print(state)
