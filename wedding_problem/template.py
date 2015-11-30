@@ -20,8 +20,8 @@ class Wedding(Problem):
         self.read_input_file(input_file)
         size_table = int(self.n / self.t)
         self.tables = [[None for x in range(0,size_table)] for y in range(0,self.t)]
-        self.value = 0
-        self.initial = State(self.n, self.t, self.a, self.tables, self.value)
+        self.val = 0
+        self.initial = State(self.n, self.t, self.a, self.tables, self.val)
 
     def successor(self, state):
         for i in range (0, len(state.tables)):
@@ -32,15 +32,18 @@ class Wedding(Problem):
                         temp = new_tables[i][l]
                         new_tables[i][l] = new_tables[j][k]
                         new_tables[j][k] = temp
+                        new_state = State(self.n, self.t, self.a, new_tables, 0)
+                        #new_state.val = self.value(new_state)
+                        yield ((i,l,j,k), new_state)
 
     def value(self, state):
-        value = 0
+        val = 0
         for i in range(0, len(state.tables)):
             for k in range(0, len(state.tables[0])):
                 for l in range(0, len(state.tables[0])):
                     if k != l:
-                        value += state.m[state.tables[i][k]][state.tables[i][l]]
-        return value
+                        val += state.m[state.tables[i][k]][state.tables[i][l]]
+        return val
 
     def read_input_file(self, input_file):
         try:
@@ -65,12 +68,21 @@ class Wedding(Problem):
 ###############
 
 class State:
-    def __init__(self, n, t, m, tables, value):
+    def __init__(self, n, t, m, tables, val):
         self.n = n
         self.t = t
         self.m = m
         self.tables = tables
-        self.value = value
+        self.val = val
+
+    def __str__(self):
+        output = ""
+        for i in range(0, len(self.tables)):
+            #self.tables[i].sort()
+            for j in range(0, len(self.tables[0])):
+                output += str(self.tables[i][j]) + ' '
+            output += '\n'
+        return output
 
 
 ################
@@ -82,7 +94,17 @@ def randomized_maxvalue(problem, limit=100, callback=None):
 
 
 def maxvalue(problem, limit=100, callback=None):
-    pass
+    current = LSNode(problem, problem.initial, 0)
+    best = None
+    for step in range(limit):
+        if callback is not None:
+            callback(current)
+        current = random.choice(list(current.expand()))
+        if best is None:
+            best = current
+        if current.value() > best.value():
+            best = current
+    return best
 
 def greedy(problem):
      s = int(problem.n / problem.t)
@@ -122,10 +144,10 @@ def greedy_comp(tuple):
 if __name__ == '__main__':
     wedding = Wedding(sys.argv[1])
     greedy(wedding)
-    print(wedding.tables)
+    #print(wedding.tables)
 
     # node = randomized_maxvalue(wedding, 100)
-    # node = maxvalue(wedding, 100)
+    node = maxvalue(wedding, 100)
 
-    # state = node.state
-    # print(state)
+    state = node.state
+    print(state)
