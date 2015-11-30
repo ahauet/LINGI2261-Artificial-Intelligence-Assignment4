@@ -28,13 +28,14 @@ class Wedding(Problem):
             for l in range(0, len(state.tables[0])):
                 for j in range(i , len(state.tables)):
                     for k in range(0, len(state.tables[0])):
-                        new_tables = deepcopy(state.tables)
-                        temp = new_tables[i][l]
-                        new_tables[i][l] = new_tables[j][k]
-                        new_tables[j][k] = temp
-                        new_state = State(self.n, self.t, self.a, new_tables, 0)
-                        #new_state.val = self.value(new_state)
-                        yield ((i,l,j,k), new_state)
+                        if i != j:
+                            new_tables = deepcopy(state.tables)
+                            temp = new_tables[i][l]
+                            new_tables[i][l] = new_tables[j][k]
+                            new_tables[j][k] = temp
+                            new_state = State(self.n, self.t, self.a, new_tables, 0)
+                            #new_state.val = self.value(new_state)
+                            yield ((i,l,j,k), new_state)
 
     def value(self, state):
         val = 0
@@ -100,12 +101,14 @@ def maxvalue(problem, limit=100, callback=None):
     for step in range(limit):
         if callback is not None:
             callback(current)
-        current = (list(current.expand()))[0]
-        if best is None:
-            best = current
-        if current.value() > best.value():
-            best = current
-    return best
+        for state in list(current.expand()):
+            if best is None:
+                best = state
+            if state.value() > best.value():
+                best = state
+        current = best
+        best = None
+    return current
 
 def greedy(problem):
      s = int(problem.n / problem.t)
