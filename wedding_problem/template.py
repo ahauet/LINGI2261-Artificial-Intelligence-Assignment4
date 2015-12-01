@@ -7,6 +7,7 @@
 import time
 from search import *
 from copy import deepcopy, copy
+import random
 
 
 #################
@@ -29,20 +30,22 @@ class Wedding(Problem):
                 for j in range(i + 1, self.t):
                     if i != j:
                         for k in range(0, self.size_table):
+                            #copy swappable tables
                             new_table_i = copy(state.tables[i])
                             new_table_j = copy(state.tables[j])
                             new_tables = copy(state.tables)
-                            # new_tables = deepcopy(state.tables)
-                            # temp = new_tables[i][l]
-                            # new_tables[i][l] = new_tables[j][k]
-                            # new_tables[j][k] = temp
-                            # new_state = State(self.n, self.t, self.a, new_tables, 0)
+                            #swap
                             new_table_i[l] = state.tables[j][k]
                             new_table_j[k] = state.tables[i][l]
+                            #update tables
                             new_tables[i] = new_table_i
                             new_tables[j] = new_table_j
+                            #sort guest inside table
+                            new_table_i.sort()
+                            new_table_j.sort()
+                            #new state
                             new_state = State(self.a, new_tables)
-                            # new_state.val = self.value(new_state)
+                            #yield result
                             yield ((i, l, j, k), new_state)
 
     def value(self, state):
@@ -80,7 +83,7 @@ class State:
     def __init__(self, m, tables):
         self.m = m
         self.tables = tables
-        self.sort_tables()
+        #self.sort_tables()
 
     def sort_tables(self):
         if self.tables[0][0] is not None:
@@ -98,12 +101,90 @@ class State:
         return output
 
 
+
+
 ################
 # Local Search #
 ################
 
+random.seed(42)
+
+def bestRandomNeighbor(state):
+    best = None
+    neighbors = list(state.expand())
+    neighbors.sort(reverse=True)
+    neighbors = neighbors[:5] #take the 5 best elements
+    index_to_take = random.randint(0,4)
+    neighbor = neighbors[index_to_take]
+    return neighbor
+    # if best is None:
+    #     best = neighbor
+    # elif neighbor.value() > best.value():
+    #     best = neighbor
+    # elif neighbor.value() == best.value():
+    #     neighbor_concat = concat(neighbor.state)
+    #     best_concat = concat(best.state)
+    #     if neighbor_concat <= best_concat:
+    #         best = neighbor
+    #         # best = compare_same_value_state(neighbor, best)
+    # return best
+
+def random_max(node):
+    return node.value()
+
+class LSNodeCustom:
+    """A node in a local search. You will not need to subclass this class
+        for local search."""
+
+    def __init__(self, problem, state, step):
+        """Create a local search Node."""
+        self.problem = problem
+        self.state = state
+        self.step = step
+        self._value = None
+
+    def __repr__(self):
+        return "<Node %s>" % (self.state,)
+
+    def value(self):
+        """Returns the value of the state contained in this node."""
+        if self._value is None:
+            self._value = self.problem.value(self.state)
+        return self._value
+
+    def expand(self):
+        """Yields nodes reachable from this node. [Fig. 3.8]"""
+        for (act, next) in self.problem.successor(self.state):
+            yield LSNodeCustom(self.problem, next, self.step + 1)
+
+    def __lt__(self, other):
+        if self.value() < other.value():
+            return True
+        elif self.value() > other.value():
+            return False
+        else:
+            return concat(self.state) < concat(other.state)
+
 def randomized_maxvalue(problem, limit=100, callback=None):
-    pass
+    current = LSNodeCustom(problem, problem.initial, 0)
+    best_ever = current
+    previous = None
+    previous_previous = None
+    previous_previous_previous = None
+    for step in range(limit):
+        if callback is not None:
+            callback(current)
+        current = bestRandomNeighbor(current)
+        current_value = problem.value(current.state)
+        if current_value > problem.value(best_ever.state):
+            best_ever = current
+        if previous_previous_previous is not None and previous_previous_previous == previous and current_value == previous_previous:
+            break;  # we iterate over the same values over and over so just break here
+        previous_previous_previous = previous_previous
+        previous_previous = previous
+        previous = current_value
+
+    return best_ever
 
 
 def concat(state):
@@ -215,4 +296,4 @@ if __name__ == '__main__':
     print(wedding.value(state))
     print(state)
     total_time = time.time() - start_time
-    print(total_time)
+    # print(total_time)
