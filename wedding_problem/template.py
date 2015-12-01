@@ -79,7 +79,7 @@ class State:
         self.sort_tables()
 
     def sort_tables(self):
-        if len(self.tables) > 0 and len(self.tables[0]) and self.tables[0][0] is not None:
+        if len(self.tables) > 0 and len(self.tables[0]) > 0 and self.tables[0][0] is not None:
             for table in self.tables:
                 table.sort()
 
