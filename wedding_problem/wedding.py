@@ -4,6 +4,8 @@
 #		Implementation of the wedding problem class
 #
 ################################################################################
+import time
+from copy import copy
 from search import *
 
 
@@ -43,16 +45,19 @@ class Wedding(Problem):
 	def successor(self, state):
 		for i in range(self.t):
 			for j in range(self.size_table):
-				for k in range(i+1 , self.t):
+				for k in range(i + 1, self.t):
 					for l in range(0, self.size_table):
-						new_tables = [row[:] for row in state.tables]
-						tmp = new_tables[i][j]
-						new_tables[i][j] = new_tables[k][l]
-						new_tables[k][l] = tmp
-						new_tables[i].sort()
-						new_tables[k].sort()
-						new_state = State(state.n,state.t,state.a,new_tables)
-						yield ((i,j,k,l), new_state)
+						new_table_i = copy(state.tables[i])
+						new_table_k = copy(state.tables[k])
+						new_tables = copy(state.tables)
+						new_table_i[j] = state.tables[k][l]
+						new_table_k[l] = state.tables[i][j]
+						new_table_i.sort()
+						new_table_k.sort()
+						new_tables[i] = new_table_i
+						new_tables[k] = new_table_k
+						new_state = State(state.n, state.t, state.a, new_tables)
+						yield ((i, j, k, l), new_state)
 
 
 	def value(self, state):
@@ -104,11 +109,10 @@ def randomized_maxvalue(problem, limit=100, callback=None):
 
 def concat(state):
 	result = ''
-	for i in range(len(state.tables)):
-		for j in range(len(state.tables[i])):
+	for i in range(0,len(state.tables)):
+		for j in range(0,len(state.tables[i])):
 			result += str(state.tables[i][j])
 	return result
-
 
 def best_neighbor(state):
 	best = None
@@ -118,9 +122,11 @@ def best_neighbor(state):
 		elif neighbor.state.value > best.state.value:
 			best = neighbor
 		elif neighbor.state.value == best.state.value:
-			neighbor_concat = concat(neighbor.state)
-			best_concat = concat(best.state)
-			if neighbor_concat < best_concat:
+			#neighbor_concat = concat(neighbor.state)
+			#best_concat = concat(best.state)
+			#if neighbor_concat < best_concat:
+				#best = neighbor
+			if neighbor.state.tables < best.state.tables:
 				best = neighbor
 	return best
 
@@ -177,6 +183,7 @@ def greedy_comp(tuple):
     return tuple[1]
 
 if __name__ == '__main__':
+	start_time = time.time()
 	wedding = Wedding(sys.argv[1])
 	greedy(wedding)
 	wedding.initial.set_value()
@@ -188,3 +195,5 @@ if __name__ == '__main__':
 	state = node.state
 	print(node.state.value)
 	print(state)
+	total_time = time.time() - start_time
+	#print(total_time)
