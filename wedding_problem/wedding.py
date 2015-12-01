@@ -21,7 +21,7 @@ class Wedding(Problem):
 		self.tables = []  # Tables
 		self.init_from_file(init_file)	# Initialize problem
 		self.size_table = int(self.n / self.t)  # Number of person by table
-		self.initial = State(self.n,self.t, self.a,self.tables)
+		self.initial = State(self.n,self.t, self.a,self.tables, 0)
 
 	def init_from_file(self, file_name):
 		try:
@@ -56,8 +56,17 @@ class Wedding(Problem):
 						new_table_k.sort()
 						new_tables[i] = new_table_i
 						new_tables[k] = new_table_k
-						new_state = State(state.n, state.t, state.a, new_tables)
+						old_values = self.value_for_row(i,state.tables,state.a) + self.value_for_row(k,state.tables,state.a)
+						new_values = self.value_for_row(i,new_tables,state.a) + self.value_for_row(k,new_tables,state.a)
+						new_state = State(state.n, state.t, state.a, new_tables, state.value - old_values + new_values)
 						yield ((i, j, k, l), new_state)
+
+	def value_for_row(self, table_num, tables, a):
+		result = 0
+		for j in range(len(tables[table_num])):
+			for i in range(len(tables[table_num])):
+				result += a[tables[table_num][i]][tables[table_num][j]]
+		return result
 
 
 	def value(self, state):
@@ -69,12 +78,12 @@ class Wedding(Problem):
 ###############
 
 class State:
-	def __init__(self, n, t, a, tables):
+	def __init__(self, n, t, a, tables, value):
 		self.n = n
 		self.t = t
 		self.a = a
 		self.tables = tables
-		self.value = self.find_value(tables,a)
+		self.value = value
 
 	def __str__(self):
 		output = ""
@@ -196,4 +205,3 @@ if __name__ == '__main__':
 	print(node.state.value)
 	print(state)
 	total_time = time.time() - start_time
-	#print(total_time)
