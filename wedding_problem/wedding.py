@@ -50,7 +50,7 @@ class Wedding(Problem):
 						new_tables[i][j] = new_tables[k][l]
 						new_tables[k][l] = tmp
 						new_tables[i].sort()
-						new_tables[j].sort()
+						new_tables[k].sort()
 						new_state = State(state.n,state.t,state.a,new_tables)
 						yield ((i,j,k,l), new_state)
 
@@ -77,7 +77,7 @@ class State:
 			self.tables[i].sort()
 			for j in range(0, len(self.tables[0])):
 				output += str(self.tables[i][j]) + ' '
-			if i < len(self.tables)-1:
+			if i < len(self.tables) - 1:
 				output += '\n'
 		return output
 
@@ -107,7 +107,7 @@ def concat(state):
 	for i in range(len(state.tables)):
 		for j in range(len(state.tables[i])):
 			result += str(state.tables[i][j])
-	return  result
+	return result
 
 
 def best_neighbor(state):
@@ -124,7 +124,7 @@ def best_neighbor(state):
 				best = neighbor
 	return best
 
-def maxvalue(problem, limit=100, callback=None):
+def maxvalue(problem,limit=100,callback=None):
 	current = LSNode(problem, problem.initial, 0)
 	best = current
 	previous = None
