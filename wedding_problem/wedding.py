@@ -79,18 +79,30 @@ class Wedding(Problem):
 #  PriorityQueue  #
 ###################
 class PriorityQueue:
-    def __init__(self):
-        self._queue = []
-        self._index = 0
+	def __init__(self):
+		self.queue = []
+		self.index = 0
 
-    def push(self, item, priority):
-        if self._index >= 5:
-            heapq.heappop(self._queue)[-1]
-        heapq.heappush(self._queue, (-priority, self._index, item))
-        self._index += 1
+	def push(self, item, priority):
+		if len(self.queue) == 5 :
+			self.pop()
+		heapq.heappush(self.queue, (-priority, self.index, item))
+		self.index += 1
 
-    def pop(self):
-        return heapq.heappop(self._queue)[-1]
+	def get_state(self, i):
+		while i < 0:
+			if len(self.queue) == 1:
+				break
+			self.pop()
+			i -= 1
+		return self.pop()
+
+	def pop(self):
+		self.index -= 1
+		return heapq.heappop(self.queue)[-1]
+
+	def get_size(self):
+		return len(self.queue)
 
 
 ###############
@@ -135,43 +147,49 @@ class State:
 random.seed(42)
 
 def randomized_maxvalue(problem, limit=100, callback=None):
-    current = LSNode(problem, problem.initial, 0)
-    best = current
-    previous = None
-    previous_previous = None
-    previous_previous_previous = None
-    for step in range(limit):
-        if callback is not None:
-            callback(current)
-        current = best_neighbor(current)
-        current_value = current.state.value
-        if current_value > best.state.value:
-            best = current
-        if previous_previous_previous is not None and previous_previous_previous == previous and current_value == previous_previous:
-            break;  # we iterate over the same values over and over so just break here
-        previous_previous_previous = previous_previous
-        previous_previous = previous
-        previous = current_value
-    return best
+	current = LSNode(problem, problem.initial, 0)
+	best = current
+	previous = None
+	previous_previous = None
+	previous_previous_previous = None
+	for step in range(limit):
+		if callback is not None:
+			callback(current)
+		current = randomly_neighbors(current)
+		current_value = current.state.value
+		if current_value > best.state.value:
+			best = current
+		if previous_previous_previous is not None and previous_previous_previous == previous and current_value == previous_previous:
+			break;  # we iterate over the same values over and over so just break here
+		previous_previous_previous = previous_previous
+		previous_previous = previous
+		previous = current_value
+	return best
 
 
 def best_five_neighbors(state):
-    bests = PriorityQueue
-    for neighbor in list(state.expand()):
-        if bests._index == 0:
-            bests.push(neighbor, neighbor.state.value)
-        elif neighbor.state.value > bests.state.value:
-            bests.push(neighbor, neighbor.state.value)
-        elif neighbor.state.value == bests.state.value:
-            if neighbor.state.tables < bests.state.tables:
-                bests.push(neighbor, neighbor.state.value)
-    return bests
+	bests = PriorityQueue()
+	for neighbor in list(state.expand()):
+
+		if bests.get_size() == 0:
+			bests.push(neighbor, neighbor.state.value)
+		else:
+			best = bests.pop()
+			bests.push(best,best.state.value)
+			if neighbor.state.value > best.state.value:
+				bests.push(neighbor, neighbor.state.value)
+			elif neighbor.state.value == best.state.value:
+				if neighbor.state.tables < best.state.tables:
+					bests.push(neighbor, neighbor.state.value)
+			else :
+				bests.push(best,best.state.value)
+	return bests
 
 
 def randomly_neighbors(state):
     bests = best_five_neighbors(state)
     index = random.randint(0, 4)
-    return bests._queue[index]
+    return bests.get_state(index)
 
 
 def concat(state):
