@@ -6,7 +6,7 @@
 ################################################################################
 import time
 from search import *
-from copy import deepcopy
+from copy import deepcopy, copy
 
 
 #################
@@ -19,30 +19,37 @@ class Wedding(Problem):
         self.t = 0
         self.a = []
         self.read_input_file(input_file)
-        size_table = int(self.n / self.t)
-        self.tables = [[None for x in range(0,size_table)] for y in range(0,self.t)]
-        self.val = 0
-        self.initial = State(self.n, self.t, self.a, self.tables, self.val)
+        self.size_table = int(self.n / self.t)
+        self.tables = [[None for x in range(0,self.size_table)] for y in range(0,self.t)]
+        self.initial = State(self.a, self.tables)
 
     def successor(self, state):
-        for i in range (0, len(state.tables)):
-            for l in range(0, len(state.tables[0])):
-                for j in range(i+1 , len(state.tables)):
+        for i in range (self.t):
+            for l in range(self.size_table):
+                for j in range(i+1 , self.t):
                     if i != j:
-                        for k in range(0, len(state.tables[0])):
-                            new_tables = deepcopy(state.tables)
-                            temp = new_tables[i][l]
-                            new_tables[i][l] = new_tables[j][k]
-                            new_tables[j][k] = temp
-                            new_state = State(self.n, self.t, self.a, new_tables, 0)
+                        for k in range(0, self.size_table):
+                            new_table_i = copy(state.tables[i])
+                            new_table_j = copy(state.tables[j])
+                            new_tables = copy(state.tables)
+                            #new_tables = deepcopy(state.tables)
+                            # temp = new_tables[i][l]
+                            # new_tables[i][l] = new_tables[j][k]
+                            # new_tables[j][k] = temp
+                            # new_state = State(self.n, self.t, self.a, new_tables, 0)
+                            new_table_i[l] = state.tables[j][k]
+                            new_table_j[k] = state.tables[i][l]
+                            new_tables[i] = new_table_i
+                            new_tables[j] = new_table_j
+                            new_state = State(self.a, new_tables)
                             #new_state.val = self.value(new_state)
                             yield ((i,l,j,k), new_state)
 
     def value(self, state):
         val = 0
-        for i in range(0, len(state.tables)):
-            for k in range(0, len(state.tables[0])):
-                for l in range(0, len(state.tables[0])):
+        for i in range(self.t):
+            for k in range(self.size_table):
+                for l in range(self.size_table):
                     if k != l:
                         val += state.m[state.tables[i][k]][state.tables[i][l]]
         return val
@@ -70,12 +77,9 @@ class Wedding(Problem):
 ###############
 
 class State:
-    def __init__(self, n, t, m, tables, val):
-        self.n = n
-        self.t = t
+    def __init__(self, m, tables):
         self.m = m
         self.tables = tables
-        self.val = val
         self.sort_tables()
 
     def sort_tables(self):
@@ -125,6 +129,7 @@ def bestNeighbor(state):
 
 def maxvalue(problem, limit=100, callback=None):
     current = LSNode(problem, problem.initial, 0)
+    best_ever = current
     previous = None
     previous_previous = None
     previous_previous_previous = None
@@ -133,20 +138,22 @@ def maxvalue(problem, limit=100, callback=None):
             callback(current)
         current = bestNeighbor(current)
         current_value = problem.value(current.state)
+        if current_value > problem.value(best_ever.state):
+            best_ever = current
         if previous_previous_previous is not None and previous_previous_previous == previous and current_value == previous_previous:
             break; #we iterate over the same values over and over so just break here
         previous_previous_previous = previous_previous
         previous_previous = previous
         previous = current_value
 
-    return current
+    return best_ever
 
 def greedy(problem):
      s = int(problem.n / problem.t)
      assigned_person = [0] * problem.n
      for table in problem.tables:
          seat = 0
-         alone_people = find_allow_person(assigned_person)
+         alone_people = find_alone_person(assigned_person)
          if alone_people == -1:
              print("Error : everyone is at the table ")
          table[seat] = alone_people
@@ -160,7 +167,7 @@ def greedy(problem):
              seat += 1
              assigned_person[friend[0]] = 1
 
-def find_allow_person(list):
+def find_alone_person(list):
     for x in range(0, len(list)):
         if list[x] == 0:
             return x
@@ -190,4 +197,4 @@ if __name__ == '__main__':
     print(wedding.value(state))
     print(state)
     total_time = time.time() - start_time
-    #print(total_time)
+    print(total_time)
