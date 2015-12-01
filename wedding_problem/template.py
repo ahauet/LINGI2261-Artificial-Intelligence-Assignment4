@@ -102,43 +102,43 @@ def randomized_maxvalue(problem, limit=100, callback=None):
     pass
 
 
+def concat(state):
+    result = ''
+    for i in range(len(state.tables)):
+        for j in range(len(state.tables[i])):
+            result += str(state.tables[i][j])
+    return  result
+
+def bestNeighbor(state):
+    best = None
+    for neighbor in list(state.expand()):
+        if best is None:
+            best = neighbor
+        elif neighbor.value() > best.value():
+            best = neighbor
+        elif neighbor.value() == best.value():
+            neighbor_concat = concat(neighbor.state)
+            best_concat = concat(best.state)
+            if neighbor_concat <= best_concat:
+                best = neighbor
+    return best
+
 def maxvalue(problem, limit=100, callback=None):
     current = LSNode(problem, problem.initial, 0)
-    best = None
     previous = None
     previous_previous = None
     previous_previous_previous = None
     for step in range(limit):
         if callback is not None:
             callback(current)
-        for node in list(current.expand()):
-            if best is None:
-                best = node
-            if node.value() > best.value():
-                best = node
-            elif node.value() == best.value():
-                found = False
-                #need to compare them with the concatenation of the 2 states's tables
-                for i in range(len(node.state.tables)):
-                    #if found : break
-                    for j in range(len(node.state.tables[0])):
-                        if node.state.tables[i][j] < best.state.tables[i][j]:
-                            found = True
-                            break
-                        elif node.state.tables[i][j] > best.state.tables[i][j]:
-                            best = node
-                            found = True
-                            break
-
-        current = best
-        best = None
+        current = bestNeighbor(current)
         current_value = problem.value(current.state)
-        #print("current = %s; p = %s; pp = %s; ppp = %s", problem.value(current.state), previous, previous_previous, previous_previous_previous)
         if previous_previous_previous is not None and previous_previous_previous == previous and current_value == previous_previous:
             break; #we iterate over the same values over and over so just break here
         previous_previous_previous = previous_previous
         previous_previous = previous
         previous = current_value
+
     return current
 
 def greedy(problem):
