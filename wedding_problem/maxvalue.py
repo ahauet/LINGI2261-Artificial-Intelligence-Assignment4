@@ -318,14 +318,14 @@ if __name__ == '__main__':
     wedding = Wedding(sys.argv[1])
     greedy(wedding)
     wedding.initial.set_value()
-    print(wedding.initial.value)
-    print(wedding.initial)
+    #print(wedding.initial.value)
+    #print(wedding.initial)
     # node = randomized_maxvalue(wedding, 100)
     node = maxvalue(wedding, 100)
 
     state = node.state
-    print(node.state.value)
-    print(state)
+    #print(node.state.value)
+    #print(state)
     total_time = time.time() - start_time
-    # print('time;value;step')
-    # print(str(total_time)+';'+str(node.state.value)+';'+str(node.step))
+    print('time;value;step')
+    print(str(total_time)+';'+str(node.state.value)+';'+str(node.step))
