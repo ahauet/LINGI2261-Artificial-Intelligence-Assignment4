@@ -72,8 +72,37 @@ class Wedding(Problem):
         return result
 
     def value(self, state):
-        return state.val
+        return state.value
 
+
+###################
+#  PriorityQueue  #
+###################
+# class PriorityQueue:
+#     def __init__(self):
+#         self.queue = []
+#         self.index = 0
+#
+#     def push(self, item, priority):
+#         if len(self.queue) == 5:
+#             self.pop()
+#         heapq.heappush(self.queue, (-priority, self.index, item))
+#         self.index += 1
+#
+#     def get_state(self, i):
+#         while i < 0:
+#             if len(self.queue) == 1:
+#                 break
+#             self.pop()
+#             i -= 1
+#         return self.pop()
+#
+#     def pop(self):
+#         self.index -= 1
+#         return heapq.heappop(self.queue)[-1]
+#
+#     def get_size(self):
+#         return len(self.queue)
 
 
 ###############
@@ -81,121 +110,161 @@ class Wedding(Problem):
 ###############
 
 class State:
-	def __init__(self, n, t, a, tables, value):
-		self.n = n
-		self.t = t
-		self.a = a
-		self.tables = tables
-		self.value = value
+    def __init__(self, n, t, a, tables, value):
+        self.n = n
+        self.t = t
+        self.a = a
+        self.tables = tables
+        self.value = value
 
-	def __str__(self):
-		output = ""
-		for i in range(0, len(self.tables)):
-			self.tables[i].sort()
-			for j in range(0, len(self.tables[0])):
-				output += str(self.tables[i][j]) + ' '
-			if i < len(self.tables) - 1:
-				output += '\n'
-		return output
+    def __str__(self):
+        output = ""
+        for i in range(0, len(self.tables)):
+            self.tables[i].sort()
+            for j in range(0, len(self.tables[0])):
+                output += str(self.tables[i][j]) + ' '
+            if i < len(self.tables) - 1:
+                output += '\n'
+        return output
 
-	def set_value(self):
-		val = self.find_value(self.tables, self.a)
-		self.value = val
+    def set_value(self):
+        val = self.find_value(self.tables, self.a)
+        self.value = val
 
-	def find_value(self, tables, a):
-		val = 0
-		for i in range(0, len(tables)):
-			for j in range(0, len(tables[i])):
-				for k in range(0, len(tables[i])):
-					val += a[tables[i][j]][tables[i][k]]
-		return val
-
-	def __cmp__(self, other):
-		if self.value > other.value:
-			return 1
-		if self.value < other.value:
-			return -1
-		if self.value == other.value:
-			if self.tables < other.tables:
-				return 1
-		return -1
-
+    def find_value(self, tables, a):
+        val = 0
+        for i in range(0, len(tables)):
+            for j in range(0, len(tables[i])):
+                for k in range(0, len(tables[i])):
+                    val += a[tables[i][j]][tables[i][k]]
+        return val
 
 
 ################
 # Local Search #
 ################
 
-random.seed(42)
+class LSNodeCustom:
+    """A node in a local search. You will not need to subclass this class
+        for local search."""
 
-def randomized_maxvalue(problem, limit=100, callback=None):
-	current = LSNode(problem, problem.initial, 0)
-	best = current
-	previous = None
-	previous_previous = None
-	previous_previous_previous = None
-	for step in range(limit):
-		if callback is not None:
-			callback(current)
-		current = randomly_neighbors(current)
-		current_value = current.state.value
-		if current_value > best.state.value:
-			best = current
-		if previous_previous_previous is not None and previous_previous_previous == previous and current_value == previous_previous:
-			break;  # we iterate over the same values over and over so just break here
-		previous_previous_previous = previous_previous
-		previous_previous = previous
-		previous = current_value
-	return best
+    def __init__(self, problem, state, step):
+        """Create a local search Node."""
+        self.problem = problem
+        self.state = state
+        self.step = step
+        self._value = None
+
+    def __repr__(self):
+        return "<Node %s>" % (self.state,)
+
+    def value(self):
+        """Returns the value of the state contained in this node."""
+        if self._value is None:
+            self._value = self.problem.value(self.state)
+        return self._value
+
+    def expand(self):
+        """Yields nodes reachable from this node. [Fig. 3.8]"""
+        for (act, next) in self.problem.successor(self.state):
+            yield LSNodeCustom(self.problem, next, self.step + 1)
+
+def cmp_LSNodeCustom(first, other):
+    if first.state.value < other.state.value: return -1
+    elif first.state.value > other.state.value: return 1
+    else:
+        if first.state.tables <= other.state.tables:
+            return 1
+        else:
+            return -1
 
 def cmp_to_key(mycmp):
     'Convert a cmp= function into a key= function'
+
     class K:
         def __init__(self, obj, *args):
             self.obj = obj
+
         def __lt__(self, other):
             return mycmp(self.obj, other.obj) < 0
+
         def __gt__(self, other):
             return mycmp(self.obj, other.obj) > 0
+
         def __eq__(self, other):
             return mycmp(self.obj, other.obj) == 0
+
         def __le__(self, other):
             return mycmp(self.obj, other.obj) <= 0
+
         def __ge__(self, other):
             return mycmp(self.obj, other.obj) >= 0
+
         def __ne__(self, other):
             return mycmp(self.obj, other.obj) != 0
+
     return K
 
 
+    # def __lt__(self, other):
+    #     if self.value() < other.value():
+    #         return True
+    #     elif self.value() > other.value():
+    #         return False
+    #     else:
+    #         return concat(self.state) < concat(other.state)
+
+random.seed(42)
+
+
+def randomized_maxvalue(problem, limit=100, callback=None):
+    current = LSNodeCustom(problem, problem.initial, 0)
+    best = current
+    previous = None
+    previous_previous = None
+    previous_previous_previous = None
+    for step in range(limit):
+        if callback is not None:
+            callback(current)
+        current = randomly_neighbors(current)
+        current_value = current.state.value
+        if current_value > best.state.value:
+            best = current
+        if previous_previous_previous is not None and previous_previous_previous == previous and current_value == previous_previous:
+            break;  # we iterate over the same values over and over so just break here
+        previous_previous_previous = previous_previous
+        previous_previous = previous
+        previous = current_value
+    return best
+
+
 def best_five_neighbors(state):
-	bests = []
-	for neighbor in list(state.expand()):
-		bests.append(neighbor)
-	return bests
+    #bests = PriorityQueue()
+    bests = list(state.expand())
+    bests.sort(key=cmp_to_key(cmp_LSNodeCustom), reverse=True)
+    return bests[:5] #take the 5 first elements
+    # for neighbor in list(state.expand()):
+    #
+    #     if bests.get_size() == 0:
+    #         bests.push(neighbor, neighbor.state.value)
+    #     else:
+    #         best = bests.pop()
+    #         bests.push(best, best.state.value)
+    #         if neighbor.state.value > best.state.value:
+    #             bests.push(neighbor, neighbor.state.value)
+    #         elif neighbor.state.value == best.state.value:
+    #             if neighbor.state.tables < best.state.tables:
+    #                 bests.push(neighbor, neighbor.state.value)
+    #         else:
+    #             bests.push(best, best.state.value)
+    # return bests
 
 
 def randomly_neighbors(state):
-	bests = best_five_neighbors(state)
-	sorted(bests, key=cmp_to_key(compare))
-	index = random.randint(0, 4)
-	result = bests[index]
-	print(bests[0].state.value, ' - ', bests[1].state.value, ' - ', bests[2].state.value, ' - ', bests[3].state.value, ' - ', bests[4].state.value)
-	return result
-
-def compare(node1, node2):
-	state1 = node1.state
-	state2 = node2.state
-	if state1.value > state2.value:
-		return 1
-	if state1.value < state2.value:
-		return -1
-	if state1.value == state2.value:
-		if state1.tables < state2.tables:
-			return 1
-		else : return -1
-	return 0
-
+    bests = best_five_neighbors(state)
+    index = random.randint(0, 4)
+    #return bests.get_state(index)
+    return bests[index]
 
 
 def concat(state):
