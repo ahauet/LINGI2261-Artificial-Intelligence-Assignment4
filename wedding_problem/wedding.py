@@ -213,18 +213,24 @@ def cmp_to_key(mycmp):
     return K
 
 def best_five_neighbors(state):
-    bests = queue.PriorityQueue(6)
+    bests = []
+    min  = 30000
     for neighbor in list(state.expand()):
-        if bests._qsize() == 6: bests.get_nowait()
-        bests.put(neighbor)
+        value = neighbor.state.value
+        if len(bests) < 5:
+            if value < min:
+                min = value
+            bests.append(neighbor)
+        elif min < value:
+            bests.append(neighbor)
     return bests
 
 
 def randomly_neighbors(state):
     bests = best_five_neighbors(state)
-    bests.queue.sort(key=cmp_to_key(cmp_LSNodeCustom), reverse=True)
+    bests.sort(key=cmp_to_key(cmp_LSNodeCustom), reverse=True)
     index = random.randint(0, 4)
-    return bests.queue[index]
+    return bests[index]
 
 
 def concat(state):
@@ -322,3 +328,4 @@ if __name__ == '__main__':
     print(node.state.value)
     print(state)
     total_time = time.time() - start_time
+    print(total_time)
