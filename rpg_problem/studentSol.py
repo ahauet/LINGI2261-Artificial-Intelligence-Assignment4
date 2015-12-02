@@ -18,6 +18,18 @@ def get_clauses(merchant, level):
 		# 
 		# clauses.append(tuple(equ.index for equ in merchant.equipments))
 		clauses = []
+		abi_map = merchant.abi_map
+
+		#ajout des equipements requis pour avoir les abilités nécessaires
+		for ab_name in level.ability_names:
+			clauses.append(tuple(equ.index for equ in abi_map[ab_name].provided_by))
+
+		#ajout des conflits entre les équipements
+		for ab_name in level.ability_names:
+			for equ in abi_map[ab_name].provided_by:
+				clauses.append((equ.index, equ.conflicts.index))
+				clauses.append((-equ.index, -equ.conflicts.index))
+
 		return clauses
 
 def get_nb_vars(merchant, level):
@@ -27,4 +39,18 @@ def get_nb_vars(merchant, level):
 		# all the abilities provided by these equipment, you would have:
 		# nb_vars = len(merchant.abilities) + len(merchant.equipments)
 		nb_vars = 0
-		return nb_vars
+		abi_map = merchant.abi_map
+		equipements = {}
+
+		#ajout des equipements requis pour avoir les abilités nécessaires
+		for ab_name in level.ability_names:
+			for equ in abi_map[ab_name].provided_by:
+				equipements[equ.name] = 1
+
+		#ajout des conflits entre les équipements
+		for ab_name in level.ability_names:
+			for equ in abi_map[ab_name].provided_by:
+				equipements[equ.name] = 1
+				equipements[equ.conflicts.name] = 1
+
+		return len(equipements)
