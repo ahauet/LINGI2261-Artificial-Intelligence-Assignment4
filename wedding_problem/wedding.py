@@ -31,6 +31,7 @@ class MyLSNODE():
 
     def value(self):
         """Returns the value of the state contained in this node."""
+        if self.state.value is not None: return self.state.value
         if self._value is None:
             self._value = self.problem.value(self.state)
         return self._value
@@ -39,22 +40,21 @@ class MyLSNODE():
         """Yields nodes reachable from this node. [Fig. 3.8]"""
         for (act, next) in self.problem.successor(self.state):
             yield MyLSNODE(self.problem, next, self.step + 1)
-    #
-    # def __lt__(self, other):
-    #     return self.cmp_LSNodeCustom(self, other) < 0
-    #
+
+    def __lt__(self, other):
+        return cmp_LSNodeCustom(self, other) < 0
+
     # def __gt__(self, other):
-    #     return self.cmp_LSNodeCustom(self, other) > 0
-    #
+    #     return cmp_LSNodeCustom(self, other) > 0
     #
     # def __eq__(self, other):
-    #     return self.cmp_LSNodeCustom(self, other) == 0
+    #     return cmp_LSNodeCustom(self, other) == 0
     #
     # def __le__(self, other):
-    #     return self.cmp_LSNodeCustom(self, other) <= 0
+    #     return cmp_LSNodeCustom(self, other) <= 0
     #
     # def __ge__(self, other):
-    #     return self.cmp_LSNodeCustom(self, other) >= 0
+    #     return cmp_LSNodeCustom(self, other) >= 0
     #
     # def __ne__(self, other):
     #     return (self, other) != 0
@@ -174,11 +174,8 @@ class State:
 
 def randomized_maxvalue(problem, limit=100, callback=None):
     random.seed(42)
-    current = LSNode(problem, problem.initial, 0)
+    current = MyLSNODE(problem, problem.initial, 0)
     best = current
-    # previous = None
-    # previous_previous = None
-    # previous_previous_previous = None
     for step in range(limit):
         if callback is not None:
             callback(current)
@@ -186,11 +183,6 @@ def randomized_maxvalue(problem, limit=100, callback=None):
         current_value = current.state.value
         if current_value > best.state.value:
             best = current
-        # if previous_previous_previous is not None and previous_previous_previous == previous and current_value == previous_previous:
-        #     break;  # we iterate over the same values over and over so just break here
-        # previous_previous_previous = previous_previous
-        # previous_previous = previous
-        # previous = current_value
     return best
 
 def cmp_to_key(mycmp):
@@ -221,19 +213,18 @@ def cmp_to_key(mycmp):
     return K
 
 def best_five_neighbors(state):
-    # bests = queue.PriorityQueue()
-    # for neighbor in list(state.expand()):
-    #     bests.put(neighbor)
-    bests = list(state.expand())
-    bests.sort(key=cmp_to_key(cmp_LSNodeCustom), reverse=True)
-    bests = bests[:5]
+    bests = queue.PriorityQueue(6)
+    for neighbor in list(state.expand()):
+        if bests._qsize() == 6: bests.get_nowait()
+        bests.put(neighbor)
     return bests
 
 
 def randomly_neighbors(state):
     bests = best_five_neighbors(state)
+    bests.queue.sort(key=cmp_to_key(cmp_LSNodeCustom), reverse=True)
     index = random.randint(0, 4)
-    return bests[index]
+    return bests.queue[index]
 
 
 def concat(state):
